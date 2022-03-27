@@ -4,6 +4,7 @@
 
 **Kustomize** has the concepts of `bases` and `overlays`. A *base* is a directory with a `kustomization.yaml`, which contains a set of resources and associated customization. A base could be either a **local** directory or a directory from a **remote** repo, as long as a `kustomization.yaml` is present inside. An *overlay* is a directory with a `kustomization.yaml` that refers to other kustomization directories as its bases. A base has no knowledge of an overlay and can be used in multiple overlays. An overlay may have multiple bases and it composes all resources from bases and may also have customization on top of them.
 
+```console
 ├── base
 │   ├── deployment.yaml
 │   ├── hpa.yaml
@@ -20,6 +21,7 @@
         └── secrets
             ├── password
             └── username
+```
 
 ## Deployment
 
