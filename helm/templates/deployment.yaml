@@ -8,6 +8,10 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | trim | nindent 4 }}
+  {{- end }} 
   selector:
     matchLabels:
       {{- include "myapp.selectorLabels" . | nindent 6 }}
@@ -43,6 +47,8 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}  
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
           volumeMounts:
             {{- if .Values.configMap.enabled }}
             - name: config-volume

@@ -123,6 +123,7 @@ Test using `template` and then `install` it. We will be useinig some best practi
 * Use of HPA in order to scale by demand depending on metrics (CPU, Memory, etc.)
 * Create custom `Service Account` instead default (using `least-privilege` principle even `default` sa does not allow anything)
 * Configured health checks for `readinessProbe` and `livenessProbe`
+* Deployment strategies that allow you to update in a variety of ways depending on the needs of the system (`Rolling update` or `Recreate`)
 
 ```bash
 # Create App Chart using `--set-file` flag

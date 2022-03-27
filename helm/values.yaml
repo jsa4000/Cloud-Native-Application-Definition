@@ -17,6 +17,13 @@ fullnameOverride: ""
 # Port where the application is listen to
 containerPort: 80
 
+strategy: {}
+  # Strategy used for updating the deployment
+  #type: RollingUpdate
+  #rollingUpdate:
+  #  maxUnavailable: 25%
+  #  maxSurge: 1
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -82,6 +89,8 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
+env: {}
 
 autoscaling:
   enabled: false

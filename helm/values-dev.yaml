@@ -5,6 +5,12 @@ image:
   pullPolicy: Always
   tag: 1.21.6-alpine
 
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 1
+
 imagePullSecrets: []
 nameOverride: nginx
 fullnameOverride: nginx-app
@@ -33,6 +39,20 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+
+env:
+  - name: CONFIG_FILE
+    value: file:/var/app/config/application.yml
+  - name: DATABASE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: nginx-app
+        key: username
+  - name: DATABASE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: nginx-app
+        key: password
 
 autoscaling:
   enabled: true
