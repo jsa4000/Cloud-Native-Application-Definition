@@ -147,7 +147,28 @@ Cons:
 This is the file Kustomize uses to create an `application`.
 
 ```yaml
+resources:
+- ../../base
+- ingress.yaml
 
+images:
+- name: nginx
+  newName: nginx
+  newTag: 1.21.6-alpine
+
+configMapGenerator:
+- name: nginx-app
+  files:
+  - config/application.yaml
+
+secretGenerator:
+- name: nginx-app
+  files:
+  - secrets/username
+  - secrets/password
+  
+patchesStrategicMerge:
+  - deployment.yaml
 ```
 
 Pros:
