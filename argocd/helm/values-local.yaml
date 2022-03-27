@@ -1,0 +1,41 @@
+
+app:
+  replicaCount: 1
+
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  # Port where the application is listen to
+  containerPort: 80
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  livenessProbe:
+    # Method used by kubelet to check the health of the pod
+    httpGet:
+      path: /
+      port: http
+
+  readinessProbe:
+    # Method used by kubelet to check the health of the pod when it starts
+    httpGet:
+      path: /
+      port: http
+
+  configMap:
+    enabled: false
+    data: 
+      foo: bar
+
+  secret:
+    enabled: false
+    data: {}

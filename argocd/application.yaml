@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ngnix-app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: webapp
+  source:
+    path: helm
+    helm:
+      values: |
+        image:
+          tag: 1.21.0-alpine
+        configMap:
+          enabled: true
+        secret:
+          enabled: true
+      valueFiles:
+      - values-dev.yaml
+      fileParameters:
+      - name: 'configMap.data.application\.yaml'
+        path: config/application.yaml
+      - name: secret.data.username
+        path: secrets/username
+      - name: secret.data.password
+        path: secrets/password
+    repoURL: https://github.com/jsa4000/Cloud-Native-Application-Definition
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+        - CreateNamespace=true
