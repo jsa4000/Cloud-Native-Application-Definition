@@ -212,7 +212,104 @@ Cons:
 
 ### Operator SDK
 
-https://sdk.operatorframework.io/docs/building-operators/helm/tutorial/
+This is the file Operator SDK uses to create an `application`.
+
+```yaml
+apiVersion: demo.example.com/v1alpha1
+kind: MyApp
+metadata:
+  name: nginx-myapp
+spec:
+  replicaCount: 1
+
+  image:
+    repository: nginx
+    pullPolicy: Always
+    tag: 1.21.6-alpine
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 1
+
+  imagePullSecrets: []
+  nameOverride: nginx
+  fullnameOverride: nginx-app
+
+  serviceAccount:
+    create: true
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    annotations: 
+      kubernetes.io/ingress.class: traefik
+    hosts:
+      - host: localhost
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  env:
+    - name: CONFIG_FILE
+      value: file:/var/app/config/application.yml
+    - name: DATABASE_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: nginx-app
+          key: username
+    - name: DATABASE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: nginx-app
+          key: password
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nginx
+                app.kubernetes.io/instance: myapp
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+
+  configMap:
+    enabled: true
+    data: 
+      application.yaml: |-
+        spring:
+          application:
+            name: my-app
+      foo: |-
+        bar
+
+  secret:
+    enabled: true
+    data: 
+      password: cGFzc3dvcmQ=
+      username: dXNlcm5hbWU=
+```
 
 
 ### Crossplane

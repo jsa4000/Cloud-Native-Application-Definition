@@ -103,6 +103,6 @@ operator-sdk run bundle-upgrade registry.hub.docker.com/jsa4000/myapp-operator-b
 ## Deploy Manifest
 
 ```bash
-# Deploy custom sample
+# Deploy custom sample (http://localhost)
 kubectl apply -f nginx-myapp.yaml
 ```
