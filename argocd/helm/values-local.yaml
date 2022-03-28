@@ -9,8 +9,8 @@ app:
     tag: ""
 
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
+  nameOverride: nginx
+  fullnameOverride: nginx-app-ots
 
   # Port where the application is listen to
   containerPort: 80

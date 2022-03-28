@@ -29,6 +29,13 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## Deployment
 
+Create Project to create **policies** and **limit** the scope in which applications are deployed.
+
+```bash
+# Deploy the ArgoCd project into kubernetes
+kubectl apply -f project.yaml  
+```
+
 Crate Application
 
 ```bash

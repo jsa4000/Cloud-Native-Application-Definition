@@ -212,6 +212,10 @@ Cons:
 
 ### Crossplane
 
+[https://github.com/crossplane/crossplane](https://github.com/crossplane/crossplane)
+
+![](images/crossplane.png)
+
 This is the file Crossplane uses to create an `application`.
 
 ```yaml

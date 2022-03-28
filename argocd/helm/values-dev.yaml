@@ -16,7 +16,7 @@ app:
 
   imagePullSecrets: []
   nameOverride: nginx
-  fullnameOverride: nginx-app
+  fullnameOverride: nginx-app-ots
 
   serviceAccount:
     create: true
