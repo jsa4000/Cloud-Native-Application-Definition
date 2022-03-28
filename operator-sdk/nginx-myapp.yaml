@@ -79,29 +79,17 @@ spec:
 
   configMap:
     enabled: true
-    data: {}
+    data: 
+      application.yaml: |-
+        spring:
+          application:
+            name: my-app
+      foo: |-
+        bar
 
   secret:
     enabled: true
-    data: {}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: nginx-app
-type: Opaque
-data:
-  password: cGFzc3dvcmQ=
-  username: dXNlcm5hbWU=
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nginx-app
-data:
-  application.yaml: |-
-    spring:
-      application:
-        name: my-app
-  foo: |-
-    bar
+    data: 
+      password: cGFzc3dvcmQ=
+      username: dXNlcm5hbWU=
+      
