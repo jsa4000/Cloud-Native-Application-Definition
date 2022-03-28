@@ -29,7 +29,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## Deployment
 
-Create Project to create **policies** and **limit** the scope in which applications are deployed.
+Create an [AppProject](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/) to enable **policies** and **limit** the scope in which applications are deployed.
 
 ```bash
 # Deploy the ArgoCd project into kubernetes
@@ -52,6 +52,9 @@ Delete Application
 ```bash
 # Deploy the application into kubernetes
 kubectl delete -f application.yaml  
+
+# Delete the project
+kubectl delete -n webapp -f project.yaml  
 ```
 
 ## Manual Installation
