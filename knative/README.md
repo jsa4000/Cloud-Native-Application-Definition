@@ -27,6 +27,57 @@ chmod +x kn-${OS}-${ARCH} && sudo mv kn-${OS}-${ARCH} /usr/local/bin/kn
 kn version
 ```
 
+### Istio
+
+There are several `Service Mesh` technologies supported by Knative such as: `Istio`,  `Kourier` and `Contour`.
+
+> The current [known-to-be-stable](https://knative.dev/docs/install/installing-istio/#before-you-begin) version of Istio tested in conjunction with Knative is `v1.12.` Versions in the 1.12 line are generally fine too.
+
+```bash
+# Remove traefik from cluster (Rancher Desktop)
+kubectl -n kube-system delete helmcharts.helm.cattle.io traefik
+
+# Helm Chart
+
+## Clone specific Istio repository tag
+git clone https://github.com/istio/istio.git
+cd istio
+git checkout 1.12.5
+
+## Install Istio Operator
+helm template /manifests/charts/istio-operator/ \
+  --set hub=docker.io/istio \
+  --set tag=1.12.5 \
+  --set operatorNamespace=istio-operator \
+  --set watchedNamespaces=istio-system | kubectl apply -f -
+
+# [USED] Istio CLI (istioctl)
+istioctl operator init --watchedNamespaces=istio-system --operatorNamespace=istio-operator --tag=1.12.5
+```
+
+`istio.yaml`
+
+```yaml
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: istio-control-plane
+  namespace: istio-system
+spec:
+  profile: default
+  components:
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: true
+```
+
+Install `istio`
+
+```bash
+# Apply custom manifest
+kubectl apply -f istio.yaml
+```
+
 ### Serving
 
 Installation can be done using multiple ways, in this case KNative operator will be installed
@@ -57,14 +108,15 @@ metadata:
   namespace: knative-serving
 spec:
   version: 1.3.0
+  # Maanifest can be fetched from different location in order
   manifests:
     - URL: https://github.com/knative/serving/releases/download/knative-v${VERSION}/serving-core.yaml
     - URL: https://github.com/knative/serving/releases/download/knative-v${VERSION}/serving-hpa.yaml
     - URL: https://github.com/knative/serving/releases/download/knative-v${VERSION}/serving-post-install-jobs.yaml
     - URL: https://github.com/knative/net-istio/releases/download/knative-v${VERSION}/net-istio.yaml
-  #config:
-  #  istio:
-  #    local-gateway.<local-gateway-namespace>.knative-local-gateway: "knative-local-gateway.<istio-namespace>.svc.cluster.local"
+  config:
+    istio:
+      local-gateway.knative-serving.knative-local-gateway: istio-ingressgateway.istio-system.svc.cluster.local
 ```
 
 Install `knative-serving`
@@ -73,3 +125,111 @@ Install `knative-serving`
 # Apply custom manifest
 kubectl apply -f knative-serving.yaml
 ```
+
+Verify the installation
+
+```bash
+# Get all posd
+kubectl get pods --all-namespaces
+
+# NAMESPACE         NAME                                                    READY   STATUS      RESTARTS   AGE
+# istio-operator    istio-operator-7787689bf-szrdh                          1/1     Running     0          12m
+# istio-system      istiod-7fbd46f6fb-56p9j                                 1/1     Running     0          9m30s
+# istio-system      istio-ingressgateway-64df784c7d-9vn5m                   1/1     Running     0          9m17s
+# istio-system      svclb-istio-ingressgateway-rktfv                        3/3     Running     0          9m17s
+# default           knative-operator-55b8d65778-hfxdd                       1/1     Running     0          2m43s
+# default           operator-webhook-9cff464c6-75l6p                        1/1     Running     0          2m44s
+# knative-serving   domain-mapping-59fdc67c94-k4l7k                         1/1     Running     0          95s
+# knative-serving   controller-658b47588b-46hj6                             1/1     Running     0          95s
+# knative-serving   autoscaler-85748d9cf4-626dt                             1/1     Running     0          96s
+# knative-serving   autoscaler-hpa-5c869c8d9-drppk                          1/1     Running     0          92s
+# knative-serving   domainmapping-webhook-6df595d448-rkv8t                  1/1     Running     0          94s
+# knative-serving   webhook-69fdbbf67d-mhqtj                                1/1     Running     0          93s
+# knative-serving   storage-version-migration-serving-serving-1.3.0-nws5h   0/1     Completed   0          91s
+# knative-serving   activator-855fbdfd77-5kxx7                              1/1     Running     0          96s
+# knative-serving   net-istio-webhook-f96dbffb4-fx5fp                       1/1     Running     0          88s
+# knative-serving   net-istio-controller-6b84bc75d6-lbg88                   1/1     Running     0          88s
+
+# Get all services
+kubectl get sva --all-namespaces
+
+# NAMESPACE         NAME                         TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                                      AGE
+# istio-operator    istio-operator               ClusterIP      10.43.113.129   <none>          8383/TCP                                     12m
+# istio-system      istiod                       ClusterIP      10.43.198.168   <none>          15010/TCP,15012/TCP,443/TCP,15014/TCP        9m52s
+# istio-system      istio-ingressgateway         LoadBalancer   10.43.176.79    192.168.1.138   15021:30411/TCP,80:31716/TCP,443:31160/TCP   9m40s
+# default           operator-webhook             ClusterIP      10.43.241.126   <none>          9090/TCP,8008/TCP,443/TCP                    3m7s
+# knative-serving   autoscaler-bucket-00-of-01   ClusterIP      10.43.129.162   <none>          8080/TCP                                     114s
+# knative-serving   activator-service            ClusterIP      10.43.80.4      <none>          9090/TCP,8008/TCP,80/TCP,81/TCP              119s
+# knative-serving   autoscaler                   ClusterIP      10.43.97.247    <none>          9090/TCP,8008/TCP,8080/TCP                   118s
+# knative-serving   controller                   ClusterIP      10.43.244.135   <none>          9090/TCP,8008/TCP                            118s
+# knative-serving   domainmapping-webhook        ClusterIP      10.43.114.101   <none>          9090/TCP,8008/TCP,443/TCP                    117s
+# knative-serving   webhook                      ClusterIP      10.43.203.41    <none>          9090/TCP,8008/TCP,443/TCP                    116s
+# knative-serving   autoscaler-hpa               ClusterIP      10.43.219.160   <none>          9090/TCP,8008/TCP                            115s
+# istio-system      knative-local-gateway        ClusterIP      10.43.153.16    <none>          80/TCP                                       113s
+# knative-serving   net-istio-webhook            ClusterIP      10.43.183.165   <none>          9090/TCP,8008/TCP,443/TCP                    110s
+```
+
+### Using Istio mTLS feature
+
+```bash
+# Enable `istio-injection` within the knative-serving namespace
+kubectl label namespace knative-serving istio-injection=enabled
+
+# Set PeerAuthentication to PERMISSIVE on knative-serving
+```
+
+### Create Service
+
+Create following file
+
+`hello-world.yaml`
+
+```yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello
+spec:
+  template:
+    metadata:
+      # This is the name of our new "Revision," it must follow the convention {service-name}-{revision-name}
+      name: hello-world
+    spec:
+      containers:
+        - image: gcr.io/knative-samples/helloworld-go
+          ports:
+            - containerPort: 8080
+          env:
+            - name: TARGET
+              value: "World"
+```
+
+Create the manifest
+
+```bash
+# Apply custom manifest
+kubectl apply -f hello-world.yaml
+
+# Get the Knative Service info
+kubectl get kservice
+
+# NAME    URL                                LATESTCREATED   LATESTREADY   READY   REASON
+# hello   http://hello.default.example.com   hello-world     hello-world   True   
+
+kubectl get kservice
+
+# NAMESPACE         NAME                         TYPE           CLUSTER-IP      EXTERNAL-IP                                           
+# knative-serving   net-istio-webhook            ClusterIP      10.43.183.165   <none>                                                
+# default           hello-world-private          ClusterIP      10.43.56.145    <none>                                                
+# default           hello-world                  ClusterIP      10.43.54.91     <none>                                                
+# default           hello                        ExternalName   <none>          istio-ingressgateway.istio-system.svc.cluster.local
+```
+
+Add entry into `/etc/host/`
+
+```bash
+...
+127.0.0.1 hello.default.example.com
+```
+
+Test the service using url http://hello.default.example.com
