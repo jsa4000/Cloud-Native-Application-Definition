@@ -210,6 +210,11 @@ patchesStrategicMerge:
 Pros:
 Cons:
 
+### Operator SDK
+
+https://sdk.operatorframework.io/docs/building-operators/helm/tutorial/
+
+
 ### Crossplane
 
 [https://github.com/crossplane/crossplane](https://github.com/crossplane/crossplane)

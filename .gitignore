@@ -7,6 +7,11 @@
 **/charts/*.tgz
 Chart.lock
 
+### Operator SDK ###
+**/bundle/*
+**/bundle*
+**/bin/*
+
 ### macOS ###
 # General
 .DS_Store

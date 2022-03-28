@@ -81,7 +81,7 @@ make docker-build docker-push IMG=jsa4000/myapp-operator:0.1.0
 make install run
 
 # Deploy the operator
-make deploy
+make deploy IMG=jsa4000/myapp-operator:0.1.0
 ```
 
 ## Deploy with Operator Lifecycle Manager (OLM)
@@ -95,14 +95,14 @@ make bundle bundle-build bundle-push BUNDLE_IMG=jsa4000/myapp-operator-bundle:0.
 
 # Run the current bundle
 operator-sdk run bundle registry.hub.docker.com/jsa4000/myapp-operator-bundle:0.1.0
+
+# Update an existing bundle
+operator-sdk run bundle-upgrade registry.hub.docker.com/jsa4000/myapp-operator-bundle:0.2.0
 ```
 
 ## Deploy Manifest
 
 ```bash
-# Deploy the default sample
-kubectl apply -f myapp-operator/config/samples/demo_v1alpha1_myapp.yaml
-
 # Deploy custom sample
 kubectl apply -f nginx-myapp.yaml
 ```
