@@ -311,6 +311,15 @@ spec:
       username: dXNlcm5hbWU=
 ```
 
+Pros:
+
+* If a manifest gets deleted the operator will automatically recover it from the current state.
+* It creates a new CRD to be used as a kubernetes resource
+
+Cons:
+
+* The method used requires a Helm Chart to be used.
+* It need to install `OLM operator` to deploy the operators 
 
 ### Crossplane
 
