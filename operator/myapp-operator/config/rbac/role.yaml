@@ -8,25 +8,15 @@ rules:
 ##
 # We need to get namespaces so the operator can read namespaces to ensure they exist
 - apiGroups:
-  - ""
+  - '*'
   resources:
-  - namespaces
+  - '*'
   verbs:
-  - get
-# We need to manage Helm release secrets
-- apiGroups:
-  - ""
-  resources:
-  - secrets
+  - '*'
+- nonResourceURLs:
+  - '*'
   verbs:
-  - "*"
-# We need to create events on CRs about things happening during reconciliation
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
+  - '*'
 
 ##
 ## Rules for demo.example.com/v1alpha1, Kind: MyApp
