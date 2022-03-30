@@ -1,6 +1,12 @@
 # KNative
 
+**Knative** is an open source community project which adds components for deploying, running, and managing serverless, cloud-native applications to Kubernetes. The serverless cloud computing model can lead to increased developer productivity and reduced operational costs.
+
+![](../images/Knative-Serving-Architecture.png)
+
 ## Install
+
+> Use `./init.sh` script to simplify the deployment.
 
 ### CLI
 
@@ -80,7 +86,11 @@ kubectl apply -f istio.yaml
 
 ### Serving
 
-Installation can be done using multiple ways, in this case KNative operator will be installed
+Serving allows to have multiple replicas with different versions and can be used concurrently.
+
+![](../images/knative_replicas.png)
+
+Installation can be done using multiple ways, in this case `Knative operator` will be used.
 
 ```bash
 # Install Knative Operator into `default` namespace (it cannot be changed)
@@ -91,7 +101,7 @@ kubectl apply -f https://github.com/knative/operator/releases/download/knative-v
 # https://platform9.com/blog/how-to-set-up-knative-serving-on-kubernetes/
 ```
 
-Create a kubernetes manifest
+Create a kubernetes [KnativeServing](https://knative.dev/docs/install/operator/configuring-with-operator/#examples) manifest.
 
 `knative-serving.yaml`
 
@@ -115,6 +125,8 @@ spec:
     - URL: https://github.com/knative/serving/releases/download/knative-v${VERSION}/serving-post-install-jobs.yaml
     - URL: https://github.com/knative/net-istio/releases/download/knative-v${VERSION}/net-istio.yaml
   config:
+    domain:
+      example.com: ""
     istio:
       local-gateway.knative-serving.knative-local-gateway: istio-ingressgateway.istio-system.svc.cluster.local
 ```
@@ -169,16 +181,51 @@ kubectl get sva --all-namespaces
 # knative-serving   net-istio-webhook            ClusterIP      10.43.183.165   <none>          9090/TCP,8008/TCP,443/TCP                    110s
 ```
 
-### Using Istio mTLS feature
+Install Istio features /(traceability, mTLS, metrics, routing, etc...)
 
 ```bash
 # Enable `istio-injection` within the knative-serving namespace
 kubectl label namespace knative-serving istio-injection=enabled
 
-# Set PeerAuthentication to PERMISSIVE on knative-serving
+# Set PeerAuthentication to PERMISSIVE or STRICT on knative-serving
+# In newer versions of Istio this is the default behavior
 ```
 
-### Create Service
+`knative-serving-pa.yaml`
+
+```yaml
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "default"
+  namespace: "knative-serving"
+spec:
+  mtls:
+    mode: PERMISSIVE
+```
+
+### Create Service
+
+When you create a `KService`, it creates:
+
+* `Configuration`, which creates:
+  * `Revision`, which creates:
+    * Kubernetes `Deployment`, which creates:
+      Kubernetes `ReplicaSet`, which creates:
+        Kubernetes `Pods` based on replica count.
+    * `PodAutoscaler`
+* `Route`, which creates:
+  * Kubernetes `Service`.
+
+Create the Namespace and inject the sidecar
+
+```bash
+# Create namespace
+kubectl create ns webapp
+
+# Enable `istio-injection` within the webapp namespace
+kubectl label namespace webapp istio-injection=enabled
+```
 
 Create following file
 
@@ -204,32 +251,71 @@ spec:
               value: "World"
 ```
 
-Create the manifest
+Create the knative servier
 
 ```bash
 # Apply custom manifest
-kubectl apply -f hello-world.yaml
+kubectl apply -n webapp -f hello-world.yaml
 
 # Get the Knative Service info
-kubectl get kservice
+kubectl get -n webapp kservice
 
 # NAME    URL                                LATESTCREATED   LATESTREADY   READY   REASON
-# hello   http://hello.default.example.com   hello-world     hello-world   True   
+# hello   http://hello.webapp.example.com   hello-world     hello-world   True   
 
-kubectl get kservice
+#         http://{SERVICE}.{NAMESPACE}.yourdomain.com
 
-# NAMESPACE         NAME                         TYPE           CLUSTER-IP      EXTERNAL-IP                                           
-# knative-serving   net-istio-webhook            ClusterIP      10.43.183.165   <none>                                                
-# default           hello-world-private          ClusterIP      10.43.56.145    <none>                                                
-# default           hello-world                  ClusterIP      10.43.54.91     <none>                                                
-# default           hello                        ExternalName   <none>          istio-ingressgateway.istio-system.svc.cluster.local
+# To change the domain https://knative.dev/docs/serving/using-a-custom-domain/
+
+k get all -n webapp
+
+# NAME                          TYPE           CLUSTER-IP    EXTERNAL-IP               PORT(S)                                      # AGE
+# service/hello-world-private   ClusterIP      10.43.8.56    <none>                    80/TCP,9090/TCP,9091/TCP,8022/TCP,8012/TCP   5m
+# service/hello-world           ClusterIP      10.43.2.138   <none>                    80/TCP                                       5m
+# service/hello                 ExternalName   <none>        istio-ingressgateway...   80/TCP                                       # 4m53s
+# 
+# NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
+# deployment.apps/hello-world-deployment   0/0     0            0           5m
+# 
+# NAME                                               DESIRED   CURRENT   READY   AGE
+# replicaset.apps/hello-world-deployment-b746bf7fc   0         0         0       5m
+# 
+# NAME                                      LATESTCREATED   LATESTREADY   READY   REASON
+# configuration.serving.knative.dev/hello   hello-world     hello-world   True    
+# 
+# NAME                                URL                               LATESTCREATED   LATESTREADY   READY   REASON
+# service.serving.knative.dev/hello   http://hello.webapp.example.com   hello-world     hello-world   True    
+# 
+# NAME                                       CONFIG NAME   K8S SERVICE NAME   GENERATION   READY   REASON   ACTUAL REPLICAS   DESIRED REPLICAS
+# revision.serving.knative.dev/hello-world   hello                            1            True             0                 0
+# 
+# NAME                              URL                               READY   REASON
+# route.serving.knative.dev/hello   http://hello.webapp.example.com   True    
 ```
 
 Add entry into `/etc/host/`
 
 ```bash
 ...
-127.0.0.1 hello.default.example.com
+127.0.0.1 hello.webapp.example.com
 ```
 
-Test the service using url http://hello.default.example.com
+Test the service using url http://hello.webapp.example.com
+
+```bash
+# After executing previous URL, knative will detect the action by the `activator` and will trigger the `autoscaler`
+
+# NAME                                         READY   STATUS    RESTARTS   AGE
+# pod/hello-world-deployment-b746bf7fc-zlhnf   3/3     Running   0          14s
+# 
+# NAME                          TYPE           CLUSTER-IP    EXTERNAL-IP              PORT(S)                                      AGE
+# service/hello-world-private   ClusterIP      10.43.8.56    <none>                   80/TCP,9090/TCP,9091/TCP,8022/TCP,8012/TCP   8m45s
+# service/hello-world           ClusterIP      10.43.2.138   <none>                   80/TCP                                       8m45s
+# service/hello                 ExternalName   <none>        istio-ingressgatewa...   80/TCP                                       8m38s
+# 
+# NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
+# deployment.apps/hello-world-deployment   1/1     1            1           8m45s
+# 
+# NAME                                               DESIRED   CURRENT   READY   AGE
+# replicaset.apps/hello-world-deployment-b746bf7fc   1         1         1       8m45s
+```
