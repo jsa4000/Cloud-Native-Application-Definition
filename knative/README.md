@@ -217,6 +217,10 @@ When you create a `KService`, it creates:
 * `Route`, which creates:
   * Kubernetes `Service`.
 
+> **Knative SErving** creates an additional `sidecar` that queue messages for concurrency and other functions.
+
+> Since **Istio** is installed, an additional sidecar will be automatically **injected** into the pods.
+
 Create the Namespace and inject the sidecar
 
 ```bash
@@ -242,6 +246,7 @@ spec:
       # This is the name of our new "Revision," it must follow the convention {service-name}-{revision-name}
       name: hello-world
     spec:
+      # https://knative.dev/docs/serving/configuration/feature-flags
       containers:
         - image: gcr.io/knative-samples/helloworld-go
           ports:
@@ -251,7 +256,7 @@ spec:
               value: "World"
 ```
 
-Create the knative servier
+Create the knative service
 
 ```bash
 # Apply custom manifest
@@ -318,4 +323,57 @@ Test the service using url http://hello.webapp.example.com
 # 
 # NAME                                               DESIRED   CURRENT   READY   AGE
 # replicaset.apps/hello-world-deployment-b746bf7fc   1         1         1       8m45s
+```
+
+## Example
+
+
+Create the knative service
+
+```bash
+# Apply custom manifest
+kubectl apply -n webapp -f nginx-service.yaml
+
+# Get the Knative Service info
+kubectl get -n webapp kservice
+```
+
+Add entry into `/etc/host/`
+
+```bash
+...
+127.0.0.1 nginx.webapp.example.com
+```
+
+Test the service using url http://nginx.webapp.example.com
+
+```bash
+# Execute following command so the service is not stopped by knative because inactivity
+while true; do curl -s "http://nginx.webapp.example.com" | grep "<title>" && sleep 2; done
+
+# Get the pod running
+kubectl get pods -n webapp
+
+# Connect into the pod (it must be running)
+kubectl exec -it -n webapp nginx-v1-deployment-76766689bb-vjljf -c user-container -- sh
+
+# Use the following commands to list the files
+ls /var/app/config
+ls /var/app/secrets
+
+# Use the following commands to list the files and see the content
+for FILE in '/var/app/config/*'; do echo $FILE && cat $FILE; done && echo
+for FILE in '/var/app/secrets/*'; do cat $FILE; done && echo
+
+# Print the word count to know whether there are additional characters
+for FILE in '/var/app/config/*'; do echo $FILE && wc $FILE; done && echo
+
+#/var/app/config/application.yaml /var/app/config/foo
+# 2  4 39 /var/app/config/application.yaml
+# 0  1  3 /var/app/config/foo
+# 2  5 42 total
+
+# get all the environment variables set by deployment
+env
+# Since the are not configured as env variables, they are not available in environment
 ```

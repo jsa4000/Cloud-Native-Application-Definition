@@ -349,10 +349,76 @@ Cons:
 
 ### Knative
 
+[https://github.com/knative/serving](https://github.com/knative/serving)
+
+![](images/knative.png)
+
 This is the file Knative uses to create an `application`.
 
 ```yaml
-
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nginx
+  #labels:
+    ## Internal-only (cluster-local) services 
+    # serving.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      # This is the name of our new "Revision," it must follow the convention {service-name}-{revision-name}
+      name: nginx-v1
+      labels:
+        test-label: "test-value"
+      annotations:
+        autoscaling.knative.dev/max-scale: "3" # 0 value is unlimited
+    spec:
+      # To process maximum N requests at a time
+      containerConcurrency: 20
+      containers:
+        - image: nginx:1.21.6-alpine
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http  
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          env:
+            - name: CONFIG_FILE
+              value: file:/var/app/config/application.yml
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: nginx-app
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: nginx-app
+          volumeMounts:
+            - name: config-volume
+              mountPath: /var/app/config
+            - name: secret-volume
+              mountPath: /var/app/secrets
+      volumes:
+        - name: config-volume
+          configMap:
+            name: nginx-app
+        - name: secret-volume
+          secret:
+            secretName: nginx-app
 ```
 
 Pros:
