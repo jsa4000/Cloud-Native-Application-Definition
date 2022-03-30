@@ -113,6 +113,8 @@ metadata:
 spec:
   components:
     - name: express-server
+      # Built-in Component Type 'webservice'
+      # https://kubevela.io/docs/end-user/components/cue/webservice
       type: webservice
       properties:
         image: crccheck/hello-world
@@ -219,3 +221,69 @@ Add following entry into the host file `/etc/host`
 ```bash
 127.0.0.1 hello.webapp.example.com
 ```
+
+## Example
+
+`nginx-application.yaml`
+
+```bash
+# Apply the manifest
+kubectl apply -n webapp -f nginx-application.yaml
+```
+
+Add entry into `/etc/host/`
+
+```bash
+...
+127.0.0.1 nginx.webapp.example.com
+```
+
+Test the service using url http://nginx.webapp.example.com
+
+```bash
+# Describe the deployment to get: labele, annotations, volumes, request, etc..
+kubectl describe deployment -n webapp nginx
+
+# Get some resources created
+kubectl get hpa,ingress -n webhap
+
+# NAME                                        REFERENCE          TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+# horizontalpodautoscaler.autoscaling/nginx   Deployment/nginx   <unknown>/50%   1         10        1          65s
+# 
+# NAME                                       CLASS    HOSTS                      ADDRESS         PORTS   AGE
+# ingress.networking.k8s.io/nginx            <none>   nginx.webapp.example.com   192.168.1.142   80      10m
+
+# Get the pod running
+kubectl get pods -n webapp
+
+# Connect into the pod (it must be running)
+kubectl exec -it -n webapp nginx-7ffdc68c6b-v6q59 -- sh
+
+# Use the following commands to list the files
+ls /var/app/config
+ls /var/app/secrets
+
+# Use the following commands to list the files and see the content
+for FILE in '/var/app/config/*'; do echo $FILE && cat $FILE; done && echo
+for FILE in '/var/app/secrets/*'; do cat $FILE; done && echo
+
+# Print the word count to know whether there are additional characters
+for FILE in '/var/app/config/*'; do echo $FILE && wc $FILE; done && echo
+
+#/var/app/config/application.yaml /var/app/config/foo
+# 2  4 39 /var/app/config/application.yaml
+# 0  1  3 /var/app/config/foo
+# 2  5 42 total
+
+# get all the environment variables set by deployment
+env
+# Since the are not configured as env variables, they are not available in environment
+```
+
+## Custom Templates
+
+There are multiple ways to [create new definitions](https://kubevela.io/docs/platform-engineers/cue/definition-edit) in Kubevela: cue, yaml, etc..
+
+In KubeVela CLI (>= v1.1.0), `vela def` command group provides a series of convenient definition writing tools. With these commands, users only need to write CUE files to generate and edit definitions, instead of composing Kubernetes YAML object with mixed CUE string.
+
+In addition, users can create definitions from existing YAML files. For example, if a user want to create a ComponentDefinition which is designed to generate a deployment, and this deployment has already been created elsewhere, he/she can use the --template-yaml flag to complete the transformation.

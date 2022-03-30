@@ -1,0 +1,85 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: nginx
+spec:
+  components:
+    - name: nginx
+      type: webservice
+      properties:
+        image: nginx:1.21.6-alpine
+        ports:
+          - port: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80 
+        env:
+          - name: CONFIG_FILE
+            value: file:/var/app/config/application.yml
+          - name: DATABASE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: username
+                name: nginx-app
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: nginx-app
+        volumeMounts:
+          configMap:
+            - name: config-volume
+              cmName: nginx-app
+              mountPath: /var/app/config
+          secret:
+            - name: secret-volume
+              secretName: nginx-app
+              mountPath: /var/app/secrets
+      traits:
+        - type: gateway
+          properties:
+            domain: nginx.webapp.example.com
+            class: traefik
+            http:
+              "/": 80
+        - type: labels
+          properties:
+            version : "stable"
+        - type: annotations
+          properties:
+            test-annotation: "test-annotation"
+        - type: resource
+          properties:
+            cpu: 0.25
+            memory: "200Mi"
+        - type: cpuscaler
+          properties:
+            min: 1
+            max: 10
+            cpuPercent: 60
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nginx-app
+type: Opaque
+data:
+  password: cGFzc3dvcmQ=
+  username: dXNlcm5hbWU=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-app
+data:
+  application.yaml: |-
+    spring:
+      application:
+        name: my-app
+  foo: |-
+    bar

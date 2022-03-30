@@ -338,10 +338,77 @@ Cons:
 
 ### KubeVela
 
+**KubeVela** is a modern application platform that makes it easier and faster to deliver and manage applications across hybrid, multi-cloud environments. At the mean time, it is highly extensible and programmable, which can adapt to your needs as they grow.
+
+![](images/what-is-kubevela-0c2584fd19c8a603b9dea994cfdadcb2.png)
+
 This is the file Kubevela uses to create an `application`.
 
 ```yaml
-
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: nginx
+spec:
+  components:
+    - name: nginx
+      type: webservice
+      properties:
+        image: nginx:1.21.6-alpine
+        ports:
+          - port: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80 
+        env:
+          - name: CONFIG_FILE
+            value: file:/var/app/config/application.yml
+          - name: DATABASE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: username
+                name: nginx-app
+          - name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: nginx-app
+        volumeMounts:
+          configMap:
+            - name: config-volume
+              cmName: nginx-app
+              mountPath: /var/app/config
+          secret:
+            - name: secret-volume
+              secretName: nginx-app
+              mountPath: /var/app/secrets
+      traits:
+        - type: gateway
+          properties:
+            domain: nginx.webapp.example.com
+            class: traefik
+            http:
+              "/": 80
+        - type: labels
+          properties:
+            version : "stable"
+        - type: annotations
+          properties:
+            test-annotation: "test-annotation"
+        - type: resource
+          properties:
+            cpu: 0.25
+            memory: "200Mi"
+        - type: cpuscaler
+          properties:
+            min: 1
+            max: 10
+            cpuPercent: 60
 ```
 
 Pros:
