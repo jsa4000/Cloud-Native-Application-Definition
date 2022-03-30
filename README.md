@@ -449,11 +449,11 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: http
+              port: 80
           readinessProbe:
             httpGet:
               path: /
-              port: http  
+              port: 80  
           resources:
             limits:
               cpu: 100m
