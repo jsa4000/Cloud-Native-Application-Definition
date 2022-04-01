@@ -135,6 +135,7 @@ spec:
             kind: Ingress
             metadata:
               annotations:
+                kubernetes.io/ingress.class: traefik
                 ingress.kubernetes.io/ssl-redirect: "false"
             spec:
               rules:
