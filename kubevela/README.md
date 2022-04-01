@@ -139,13 +139,30 @@ vela trait
 
 ```
 
-### Custom
+### Custom
 
 There are multiple ways to [create new definitions](https://kubevela.io/docs/platform-engineers/cue/definition-edit) in Kubevela: cue, yaml, etc..
 
 In KubeVela CLI (>= v1.1.0), `vela def` command group provides a series of convenient definition writing tools. With these commands, users only need to write CUE files to generate and edit definitions, instead of composing Kubernetes YAML object with mixed CUE string.
 
 In addition, users can create definitions from existing YAML files. For example, if a user want to create a ComponentDefinition which is designed to generate a deployment, and this deployment has already been created elsewhere, he/she can use the --template-yaml flag to complete the transformation.
+
+```bash
+# CReate empty definition (trait,component,scope, etc..)
+vela def init my-trait -t trait --desc "My trait description."
+
+# Create interactive definition
+vela def init my-comp --interactive 
+
+# Generate cue definition from yalm file
+vela def init my-comp -t component --desc "My component." --template-yaml ./custom/my-deployment.yaml > ./custom/my-comp.cue
+
+# validate the definition
+vela def vet ./custom/my-comp.cue
+
+# Render the cue definition into a OAM component
+vela def render ./custom/my-comp.cue -o ./custom/my-comp.yaml
+```
 
 ## First Application
 
