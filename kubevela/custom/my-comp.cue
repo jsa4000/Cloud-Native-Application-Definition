@@ -1,8 +1,8 @@
 "my-comp": {
 	annotations: {}
 	attributes: workload: definition: {
-		apiVersion: "<change me> apps/v1"
-		kind:       "<change me> Deployment"
+		apiVersion: "apps/v1"
+		kind:       "Deployment"
 	}
 	description: "My component."
 	labels: {}

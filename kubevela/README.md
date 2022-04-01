@@ -160,8 +160,21 @@ vela def init my-comp -t component --desc "My component." --template-yaml ./cust
 # validate the definition
 vela def vet ./custom/my-comp.cue
 
+# Then the user can make further modifications based on the definition file above, like removing \<change me> in workload.definition。
+
+# attributes: workload: definition: {
+#  apiVersion: "apps/v1"
+#  kind:       "Deployment"
+# }
+
 # Render the cue definition into a OAM component
 vela def render ./custom/my-comp.cue -o ./custom/my-comp.yaml
+
+# Apply components
+kubectl apply -f ./custom/my-comp.yaml
+
+# Verify the component is listed
+vela component 
 ```
 
 ## First Application
