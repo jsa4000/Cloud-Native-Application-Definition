@@ -102,13 +102,38 @@ spec:
 # Apply the manifests
 kubectl apply -f ./config/provider-aws-config.yaml
 
-# Or Install a specific configuration package
-kubectl crossplane install configuration <packageName>
 ```
 
 ### Packages
 
 `XRDs` and `Compositions` may be packaged and installed as a `configuration`. A `configuration` is a package of composition configuration that can easily be installed to Crossplane by creating a declarative Configuration resource.
+
+`crossplane.yaml`
+
+```yaml
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: app
+spec:
+  crossplane:
+    version: ">=v1.5"
+  dependsOn:
+  - provider: crossplane/provider-kubernetes
+    version: v0.3.0
+
+```
+
+```bash
+# Create the package from current directory
+kubectl crossplane build configuration --name app
+
+# Push configuration to registry
+kubectl crossplane push configuration jsa4000/crossplane-app:v0.1.0
+
+# Or Install a specific configuration package
+kubectl crossplane install configuration <packageName>
+```
 
 ## Kubernetes Provider
 
@@ -121,7 +146,7 @@ https://github.com/crossplane-contrib/provider-kubernetes
 kubectl apply -f ./config/provider-kubernetes.yaml
 
 # Or using the cli
-kubectl crossplane install provider crossplane/provider-kubernetes:main
+kubectl crossplane install provider crossplane/provider-kubernetes:v0.3.0
 
 # Wait until the controller is running
 kubectl get pods -n crossplane-system -w
