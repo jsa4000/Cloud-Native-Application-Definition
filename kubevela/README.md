@@ -99,6 +99,54 @@ vela uninstall
 helm uninstall -n vela-system kubevela
 ```
 
+## Templates
+
+### Default
+
+* [Webservice](https://kubevela.io/docs/end-user/components/cue/webservice)
+* [Worker](https://kubevela.io/docs/end-user/components/cue/worker)
+* [Task](https://kubevela.io/docs/end-user/components/cue/task)
+* [Kustomize](https://kubevela.io/docs/end-user/components/kustomize)
+* [Raw](https://kubevela.io/docs/end-user/components/cue/raw)
+* [Helm](https://kubevela.io/docs/end-user/components/helm)
+
+```bash
+# Get all the components available
+vela component 
+
+# NAME            DEFINITION              
+# worker          deployments.apps        
+# webservice      deployments.apps        
+# raw             autodetects.core.oam.dev
+# k8s-objects     autodetects.core.oam.dev
+# task            jobs.batch   
+
+# Get all the traits available
+vela trait
+
+# NAME                            APPLIES-TO        
+# volumes                         [deployments.apps]
+# service-account                 [*]               
+# node-affinity                   [*]               
+# storage                         [deployments.apps]
+# labels                          [*]               
+# env                             [*]               
+# cpuscaler                       [deployments.apps]
+# register-grafana-datasource     []                
+# pvc                             [deployments.apps]
+# service-binding                 [*]               
+# ...
+
+```
+
+### Custom
+
+There are multiple ways to [create new definitions](https://kubevela.io/docs/platform-engineers/cue/definition-edit) in Kubevela: cue, yaml, etc..
+
+In KubeVela CLI (>= v1.1.0), `vela def` command group provides a series of convenient definition writing tools. With these commands, users only need to write CUE files to generate and edit definitions, instead of composing Kubernetes YAML object with mixed CUE string.
+
+In addition, users can create definitions from existing YAML files. For example, if a user want to create a ComponentDefinition which is designed to generate a deployment, and this deployment has already been created elsewhere, he/she can use the --template-yaml flag to complete the transformation.
+
 ## First Application
 
 Deploy the first application using **Kubevela**
@@ -279,11 +327,3 @@ for FILE in '/var/app/config/*'; do echo $FILE && wc $FILE; done && echo
 env
 # Since the are not configured as env variables, they are not available in environment
 ```
-
-## Custom Templates
-
-There are multiple ways to [create new definitions](https://kubevela.io/docs/platform-engineers/cue/definition-edit) in Kubevela: cue, yaml, etc..
-
-In KubeVela CLI (>= v1.1.0), `vela def` command group provides a series of convenient definition writing tools. With these commands, users only need to write CUE files to generate and edit definitions, instead of composing Kubernetes YAML object with mixed CUE string.
-
-In addition, users can create definitions from existing YAML files. For example, if a user want to create a ComponentDefinition which is designed to generate a deployment, and this deployment has already been created elsewhere, he/she can use the --template-yaml flag to complete the transformation.
