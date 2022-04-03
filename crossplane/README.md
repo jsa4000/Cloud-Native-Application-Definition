@@ -106,7 +106,11 @@ kubectl apply -f ./config/provider-aws-config.yaml
 
 ### Packages
 
+No matter it is for `Provider` or `Configuration`, all packages must have a file called `crossplane.yaml` in the root directory. For providers, it is typically located at the package folder in the project root directory. This file contains the package’s metadata which governs how Crossplane will install the package.
+
 `XRDs` and `Compositions` may be packaged and installed as a `configuration`. A `configuration` is a package of composition configuration that can easily be installed to Crossplane by creating a declarative Configuration resource.
+
+[Package Documentation](https://negz.github.io/crossplane.github.io/docs/v1.4/getting-started/create-configuration.html)
 
 `crossplane.yaml`
 
@@ -120,19 +124,24 @@ spec:
     version: ">=v1.5"
   dependsOn:
   - provider: crossplane/provider-kubernetes
-    version: v0.3.0
+    version: ">=v0.3.0"
 
 ```
 
+Following are the main commands for managing `crossplane` packages
+
 ```bash
-# Create the package from current directory
-kubectl crossplane build configuration --name app
+# To build a package
+kubectl crossplane build [provider|configuration] [name]
 
-# Push configuration to registry
-kubectl crossplane push configuration jsa4000/crossplane-app:v0.1.0
+# To publish a package
+kubectl crossplane push [provider|configuration] <tag>
 
-# Or Install a specific configuration package
-kubectl crossplane install configuration <packageName>
+# To update a package
+kubectl crossplane update [provider|configuration] <name> <tag>
+
+# To install a packages
+kubectl crossplane install [provider|configuration] <tag>
 ```
 
 ## Kubernetes Provider
@@ -156,15 +165,20 @@ kubectl get pods -n crossplane-system -w
 
 # Create configuration based on the cluster
 
+# The the ServiceAccount for the Kubernetes Provider Controller and attach it the default ClusterRoleBinding
 SA=$(kubectl -n crossplane-system get sa -o name | grep provider-kubernetes | sed -e 's|serviceaccount\/|crossplane-system:|g')
 kubectl create clusterrolebinding provider-kubernetes-admin-binding --clusterrole cluster-admin --serviceaccount="${SA}"
 kubectl apply -f https://raw.githubusercontent.com/crossplane-contrib/provider-kubernetes/main/examples/provider/config-in-cluster.yaml
 
 # Or simply Create the configuration for the kubernetes provider (Change account name 'crossplane-provider-kubernetes-****')
 kubectl apply -f ./config/provider-kubernetes-config.yaml
+```
 
+Verify the installation creating a simple `Object`
+
+```bash
 # Use the example provided in the official repository
-kubectl apply -f https://raw.githubusercontent.com/crossplane-contrib/provider-kubernetes/main/examples/object/object.yaml
+kubectl apply -f object.yaml
 
 # Test if the namespace was created
 kubectl get ns  
@@ -175,6 +189,61 @@ kubectl get ns
 ```
 
 ### Example
+
+Example to `build` and `publish` a package for `Configuration` into a container registry
+
+```bash
+# Create the package from current directory ()
+kubectl crossplane build configuration -f ./app --name app
+
+# Push configuration to registry
+kubectl crossplane push configuration -f ./app/app.xpkg jsa4000/crossplane-app:v0.1.0
+
+# Or Install a specific configuration package
+kubectl crossplane install configuration jsa4000/crossplane-app:v0.1.0
+
+# Get the installed resources
+kubectl get CompositeResourceDefinition,Composition,Configuration    
+
+# NAME                                                                       ESTABLISHED   OFFERED   AGE
+# compositeresourcedefinition.apiextensions.crossplane.io/apps.example.com   True          True      90s
+# 
+# NAME                                                   AGE
+# composition.apiextensions.crossplane.io/app-backend    90s
+# composition.apiextensions.crossplane.io/app-frontend   90s
+# 
+# NAME                                                     INSTALLED   HEALTHY   PACKAGE                         AGE
+# configuration.pkg.crossplane.io/jsa4000-crossplane-app   True        True      jsa4000/crossplane-app:v0.1.0   96s
+```
+
+Create a custom application from previous `CompositeResourceDefinition` and `Composition` for frontend applications.
+
+```bash
+# Create the namespace set into Manifest
+kubectl create ns webapp
+
+# Use the following command to create the AppClaim for frontend Composition.
+kubectl apply -f app-frontend.yaml
+
+# Get all resources created by kubernetes Provider
+kubectl get Object
+
+# NAME               SYNCED   READY   AGE
+# nginx-deployment   True     True    3m35s
+# nginx-service      True     True    3m34s
+# nginx-ingress      True     True    3m34s
+
+# Describe an objects to get errors if SYNCED or READY statuses are false
+kubectl describe Object nginx-deployment
+
+# Custom Resource Definitions can be get as same as kubernetes objects exposing custom columns
+kubectl get AppClaim
+
+# NAME    HOST        READY   CONNECTION-SECRET   AGE
+# nginx   localhost   True                        4m53s
+
+# Verify it is working at http://localhost
+```
 
 ## Refernces
 
