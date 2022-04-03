@@ -330,7 +330,21 @@ Cons:
 This is the file Crossplane uses to create an `application`.
 
 ```yaml
-
+apiVersion: example.com/v1alpha1
+kind: AppClaim
+metadata:
+  name: nginx
+  labels:
+    app-owner: owner
+spec:
+  id: nginx
+  compositionSelector:
+    matchLabels:
+      type: frontend
+  parameters:
+    namespace: webapp
+    image: nginx:1.21.6-alpine
+    host: localhost
 ```
 
 Pros:
